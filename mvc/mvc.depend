@@ -1,0 +1,10 @@
+# depslib dependency file v1.0
+1648845872 source:c:\users\santi\desktop\traductor\mvc\parser.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<unistd.h>
+	"parser.h"
+
+1648845874 c:\users\santi\desktop\traductor\mvc\parser.h
+
