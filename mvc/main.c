@@ -18,9 +18,9 @@ void iniciaTablaErrores(int errores[]);
 void cargaTablaRegistros(char tablaReg[][50]);
 void procesa(char **parsed,TReg tablaMnem[],int NtablaMnem,TReg rotulos[],int *NRot,int *error,int *nInst,int errores[]);
 void wrHeader(int errorCompilacion,FILE *archBin,int nInst);
-void decodifica(char **parsed,int nInst, TReg tablaMnem[],TReg rotulos[],int *cantOp,int *codOp,int *tipoOpA,int *tipoOpB,int *opA,int *opB,int NtablaMnem,int NRot,int *error,int errores[],char tablaReg[][50]);
+void decodifica(char **parsed,int nInst, TReg tablaMnem[],TReg rotulos[],int *cantOp,int *codOp,int *tipoOpA,int *tipoOpB,int *opA,int *opB,int NtablaMnem,int NRot,int *error,int errores[],char tablaReg[][50],int *AbaseDecimal,int *BbaseDecimal);
 void decRegGral(char codReg[],int *operando);
-void trABin(int cantOp,int codOp,int tipoOpA,int tipoOpB,int opA,int opB,int *instBin);
+void trABin(int cantOp,int codOp,int tipoOpA,int tipoOpB,int opA,int opB,int *instBin,int AbaseDecimal,int BbaseDecimal);
 void wrParsedIns(char **parsed,int nInst,int errores[],int codOp,int instBin);
 void preparaParaEscritura(int *instBin);
 void codUpper(char *cod,char *codOp);
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     char line[256],asmFilename[25],binFilename[25], tablaReg[50][50];
     TReg tablaMnem[50],rotulos[100];
     char **parsed;
-    int nInst,instBin, cantOp, codOp, tipoOpA, tipoOpB, opA, opB,NtablaMnem,errorCompilacion = 0,NRot=0,errores[100],outputOn = 1,i;
+    int nInst,instBin, cantOp, codOp, tipoOpA, tipoOpB, opA, opB,NtablaMnem,errorCompilacion = 0,NRot=0,errores[100],outputOn = 1,i,AbaseDecimal,BbaseDecimal;
 
     leeParametros(argc,argv,asmFilename,&outputOn,binFilename); // Parametros pasados por consola
     cargaTablaMnemonicos(tablaMnem,&NtablaMnem);   // Crea tabla con codigos de operacion y mnemonico
@@ -61,26 +61,23 @@ int main(int argc, char *argv[]) {
         wrHeader(errorCompilacion,archBin,nInst);   // Escribe el header en .mv1
         nInst = 0;
         while (fgets(line,256,arch) != NULL) {
-            if (strcmp(line,"\n")) {
-                i=0;
-                while (i<strlen(line) && (line[i]==' ' || line[i]=='\t'))
-                    i++;
-                if (i<strlen(line) && line[i] != ';') {
-                    parsed = parseline(line);
-                    if (!errores[nInst]) {  // Si la instrucción actual no tiene error (de mnemónico)
-                        decodifica(parsed,nInst,tablaMnem,rotulos,&cantOp,&codOp,&tipoOpA,&tipoOpB,&opA,&opB,NtablaMnem,NRot,&errorCompilacion,errores,tablaReg);
-                        trABin(cantOp,codOp,tipoOpA,tipoOpB,opA,opB,&instBin);
-                    } else
-                        printf("ERROR: Mnemonico %s inexistente o mal escrito\n",parsed[1]);
-                    if (outputOn)
-                        wrParsedIns(parsed,nInst,errores,codOp,instBin);   // Imprime
-                    if (!errorCompilacion) {
-                        preparaParaEscritura(&instBin);// Pasa de littleEndian a bigEndian
-                        fwrite(&instBin,4,1,archBin);      // Escribe arch binario (si hubo error no)
-                    }
-                    nInst++;
+            i=0;
+            while (i<strlen(line) && (line[i]==' ' || line[i]=='\t'))
+                i++;
+            if (strcmp(line,"\n") && i<strlen(line) && line[i] != ';') {
+                parsed = parseline(line);
+                if (!errores[nInst]) {  // Si la instrucción actual no tiene error (de mnemónico)
+                    decodifica(parsed,nInst,tablaMnem,rotulos,&cantOp,&codOp,&tipoOpA,&tipoOpB,&opA,&opB,NtablaMnem,NRot,&errorCompilacion,errores,tablaReg,&AbaseDecimal,&BbaseDecimal);
+                    trABin(cantOp,codOp,tipoOpA,tipoOpB,opA,opB,&instBin,AbaseDecimal,BbaseDecimal);
                 } else
-                    printf("%s",line);
+                    printf("ERROR: Mnemonico %s inexistente o mal escrito\n",parsed[1]);
+                if (outputOn)
+                    wrParsedIns(parsed,nInst,errores,codOp,instBin);   // Imprime
+                if (!errorCompilacion) {
+                    preparaParaEscritura(&instBin);// Pasa de littleEndian a bigEndian
+                    fwrite(&instBin,4,1,archBin);      // Escribe arch binario (si hubo error no)
+                }
+                nInst++;
             } else
                 printf("%s",line);
         }
@@ -226,9 +223,11 @@ void wrHeader(int errorCompilacion,FILE *archBin,int nInst) {
     }
 }
 
-void decodifica(char **parsed,int nInst, TReg tablaMnem[],TReg rotulos[],int *cantOp,int *codOp,int *tipoOpA,int *tipoOpB,int *opA,int *opB,int NtablaMnem,int NRot,int *error,int errores[],char tablaReg[][50]) {
+void decodifica(char **parsed,int nInst, TReg tablaMnem[],TReg rotulos[],int *cantOp,int *codOp,int *tipoOpA,int *tipoOpB,int *opA,int *opB,int NtablaMnem,int NRot,int *error,int errores[],char tablaReg[][50],int *AbaseDecimal,int *BbaseDecimal) {
     int i;
     char mnem[6], *out,codReg[5],rotulo[15];
+    *AbaseDecimal=0;
+    *BbaseDecimal=0;
 
     // DECODIFICA CANTIDAD DE OPERACIONES
     if (!parsed[2])
@@ -247,16 +246,20 @@ void decodifica(char **parsed,int nInst, TReg tablaMnem[],TReg rotulos[],int *ca
 
     // DECODIFICA TIPO DE OPERANDO A Y/O B SEGUN CORRESPONDA EN DECIMAL
     if (*cantOp != 0) {
-        if ((parsed[2][0] >= '0' && parsed[2][0] <= '9') || parsed[2][0] == '#' || parsed[2][0] == '@' || parsed[2][0] == '%' || (*codOp >=241 && *codOp<=247)) {   // A inmediato
+        if ((parsed[2][0] >= '0' && parsed[2][0] <= '9') || parsed[2][0] == '#' || parsed[2][0] == '@' || parsed[2][0] == '%' || parsed[2][0] == '-' || (*codOp >=241 && *codOp<=247)) {   // A inmediato
             *tipoOpA = 0;
+            if ((parsed[2][0] >= '0' && parsed[2][0] <= '9') || parsed[2][0] == '#')
+                *AbaseDecimal = 1;
         } else if (parsed[2][0] == '[') {   // A directo
             *tipoOpA = 2;
         } else {                   // A de registro
             *tipoOpA = 1;
         }
         if (*cantOp == 2){
-            if ((parsed[3][0] >= '0' && parsed[3][0] <= '9') || parsed[3][0] == '#' || parsed[3][0] == '@' || parsed[3][0] == '%' || (*codOp >=241 && *codOp<=247)) {   // B inmediato
+            if ((parsed[3][0] >= '0' && parsed[3][0] <= '9') || parsed[3][0] == '#' || parsed[3][0] == '@' || parsed[3][0] == '%' || parsed[3][0] == '-' || (*codOp >=241 && *codOp<=247)) {   // B inmediato
                 *tipoOpB = 0;
+                if ((parsed[3][0] >= '0' && parsed[3][0] <= '9') || parsed[3][0] == '#')
+                *BbaseDecimal = 1;
             } else if (parsed[3][0] == '[') {   // B directo
                 *tipoOpB = 2;
             } else {                   // B de registro
@@ -337,19 +340,19 @@ void decRegGral(char codReg[],int *operando) {
         *operando = codReg[0] - 55 + 32;
 }
 
-void trABin(int cantOp,int codOp,int tipoOpA,int tipoOpB,int opA,int opB,int *instBin) {
+void trABin(int cantOp,int codOp,int tipoOpA,int tipoOpB,int opA,int opB,int *instBin,int AbaseDecimal,int BbaseDecimal) {
     *instBin = 0;   // 32 bits en 0
     if (cantOp == 0)
         *instBin = codOp << 20;
     else if (cantOp == 1) {
         *instBin = (codOp << 24) | ((tipoOpA << 22) & 0x00C00000) | (opA & 0x0000FFFF);
-        if (opA>>16)
+        if (opA<-65536 || opA>65535 || ((opA<-32768 || opA>32767) && AbaseDecimal))
             printf("WARNING: Truncado de operando. 16 bits insuficientes para guardar el valor del operando.\n");
     } else {
         *instBin = (codOp << 28) | ((tipoOpA << 26) & 0x0C000000) | ((tipoOpB << 24) & 0x03000000) | ((opA << 12) & 0x00FFF000) | (opB & 0x00000FFF);
-        if (opB>>12)
+        if (opB<-4096 || opB>4095 || ((opB<-2048 || opB>2047) && BbaseDecimal))
             printf("WARNING: Truncado de operando. 12 bits insuficientes para guardar el valor del operando B.\n");
-        if (opA>>12)
+        if (opA<-4096 || opA>4095 || ((opA<-2048 || opA>2047) && AbaseDecimal))
             printf("WARNING: Truncado de operando. 12 bits insuficientes para guardar el valor del operando A.\n");
     }
 }
