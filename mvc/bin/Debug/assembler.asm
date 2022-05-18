@@ -1,3 +1,4 @@
+  ; fibonacci
 	mov [10], 0 ;inicializo variables
 	mov [20], 1
 
@@ -10,4 +11,5 @@ otro: cmp [20], 100 ;compara
 	mov edx, 10
 	sys 2 ;print [10] en decimal
 	jmp otro
+
 fin: stop

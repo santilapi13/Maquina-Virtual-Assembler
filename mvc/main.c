@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     char line[256],asmFilename[25],binFilename[25], tablaReg[50][50];
     TReg tablaMnem[50],rotulos[100];
     char **parsed;
-    int nInst,instBin, cantOp, codOp, tipoOpA, tipoOpB, opA, opB,NtablaMnem,errorCompilacion = 0,NRot=0,errores[100],outputOn = 1;
+    int nInst,instBin, cantOp, codOp, tipoOpA, tipoOpB, opA, opB,NtablaMnem,errorCompilacion = 0,NRot=0,errores[100],outputOn = 1,i;
 
     leeParametros(argc,argv,asmFilename,&outputOn,binFilename); // Parametros pasados por consola
     cargaTablaMnemonicos(tablaMnem,&NtablaMnem);   // Crea tabla con codigos de operacion y mnemonico
@@ -43,8 +43,13 @@ int main(int argc, char *argv[]) {
         nInst = 0;
         while (fgets(line,256,arch) != NULL) {
             if (strcmp(line,"\n")) {
-            parsed = parseline(line);
-            procesa(parsed,tablaMnem,NtablaMnem,rotulos,&NRot,&errorCompilacion,&nInst,errores);    // Guarda rotulos y busca errores
+                i=0;
+                while (i<strlen(line) && (line[i]==' ' || line[i]=='\t'))
+                    i++;
+                if (i<strlen(line) && line[i] != ';') {
+                    parsed = parseline(line);
+                    procesa(parsed,tablaMnem,NtablaMnem,rotulos,&NRot,&errorCompilacion,&nInst,errores);    // Guarda rotulos y busca errores
+                }
             }
         }
         freeline(parsed);
@@ -57,20 +62,27 @@ int main(int argc, char *argv[]) {
         nInst = 0;
         while (fgets(line,256,arch) != NULL) {
             if (strcmp(line,"\n")) {
-            parsed = parseline(line);
-            if (!errores[nInst]) {  // Si la instrucción actual no tiene error (de mnemónico)
-                decodifica(parsed,nInst,tablaMnem,rotulos,&cantOp,&codOp,&tipoOpA,&tipoOpB,&opA,&opB,NtablaMnem,NRot,&errorCompilacion,errores,tablaReg);
-                trABin(cantOp,codOp,tipoOpA,tipoOpB,opA,opB,&instBin);
+                i=0;
+                while (i<strlen(line) && (line[i]==' ' || line[i]=='\t'))
+                    i++;
+                if (i<strlen(line) && line[i] != ';') {
+                    parsed = parseline(line);
+                    if (!errores[nInst]) {  // Si la instrucción actual no tiene error (de mnemónico)
+                        decodifica(parsed,nInst,tablaMnem,rotulos,&cantOp,&codOp,&tipoOpA,&tipoOpB,&opA,&opB,NtablaMnem,NRot,&errorCompilacion,errores,tablaReg);
+                        trABin(cantOp,codOp,tipoOpA,tipoOpB,opA,opB,&instBin);
+                    } else
+                        printf("ERROR: Mnemonico %s inexistente o mal escrito\n",parsed[1]);
+                    if (outputOn)
+                        wrParsedIns(parsed,nInst,errores,codOp,instBin);   // Imprime
+                    if (!errorCompilacion) {
+                        preparaParaEscritura(&instBin);// Pasa de littleEndian a bigEndian
+                        fwrite(&instBin,4,1,archBin);      // Escribe arch binario (si hubo error no)
+                    }
+                    nInst++;
+                } else
+                    printf("%s",line);
             } else
-                printf("ERROR: Mnemonico %s inexistente o mal escrito\n",parsed[1]);
-            if (outputOn)
-                wrParsedIns(parsed,nInst,errores,codOp,instBin);   // Imprime
-            if (!errorCompilacion) {
-                preparaParaEscritura(&instBin);// Pasa de littleEndian a bigEndian
-                fwrite(&instBin,4,1,archBin);      // Escribe arch binario (si hubo error no)
-            }
-            nInst++;
-            }
+                printf("%s",line);
         }
         freeline(parsed);
         fclose(arch);
