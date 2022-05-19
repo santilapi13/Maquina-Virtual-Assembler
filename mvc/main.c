@@ -193,6 +193,7 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TReg rotulos[],int *NRot,
     // DECODIFICA LABEL Y GUARDA SU CORRESPONDIENTE NRO DE INSTRUCCION
     if (parsed[0]) {    // Si tiene rótulo
         codUpper(parsed[0],rotulo);
+        printf("%s vs %s\n",rotulo,parsed[0]);
         strcpy(rotulos[*NRot].mnem,rotulo);
         rotulos[*NRot].codOp = *nInst;
         (*NRot)++;
@@ -370,8 +371,8 @@ int anyToInt(char *s, char **out ) {
 
 void codUpper(char *cod,char codOp[]) { // Pasa string a mayuscula
     unsigned int i=0;
-    while ((cod[i]>= 'a' && cod[i]<='z') || (cod[i]>= 'A' && cod[i]<='Z')) {
-        codOp[i] = (cod[i]>=65 && cod[i]<=90) ? (cod[i]) : (cod[i]-32);
+    while ((cod[i]>= 'a' && cod[i]<='z') || (cod[i]>= 'A' && cod[i]<='Z') || (cod[i]>= '0' && cod[i]<'9')) {
+        codOp[i] = (cod[i]>='a' && cod[i]<='z') ? (cod[i]-32) : (cod[i]);
         i++;
     }
     codOp[i] = '\0';
