@@ -193,7 +193,6 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TReg rotulos[],int *NRot,
     // DECODIFICA LABEL Y GUARDA SU CORRESPONDIENTE NRO DE INSTRUCCION
     if (parsed[0]) {    // Si tiene rótulo
         codUpper(parsed[0],rotulo);
-        printf("%s vs %s\n",rotulo,parsed[0]);
         strcpy(rotulos[*NRot].mnem,rotulo);
         rotulos[*NRot].codOp = *nInst;
         (*NRot)++;
