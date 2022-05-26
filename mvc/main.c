@@ -76,9 +76,6 @@ int main(int argc, char *argv[]) {
         fclose(arch);
     }
 
-    for (int i=0;i<Nsym;i++)
-        printf("SIMBOLO %d: %s %d\n",i,simbolos[i].sym,simbolos[i].value);
-
     if ((arch=fopen(asmFilename,"r")) != NULL) {    // SEGUNDA PASADA
         archBin = fopen(binFilename,"wb");
         wrHeader(archBin,nInst,errores,segmSize);   // Escribe el header en .mv1
@@ -180,7 +177,6 @@ void cargaTablaMnemonicos(TReg tablaMnem[],int *NtablaMnem) {
 
     strcpy(tablaMnem[24].mnem,"STOP");
     tablaMnem[24].codOp = 4081;
-    *NtablaMnem = 25;
 
     strcpy(tablaMnem[25].mnem,"SLEN");
     tablaMnem[25].codOp = 0xC;
@@ -197,6 +193,7 @@ void cargaTablaMnemonicos(TReg tablaMnem[],int *NtablaMnem) {
     tablaMnem[30].codOp = 0xFE;
     strcpy(tablaMnem[31].mnem,"RET");
     tablaMnem[31].codOp = 0xFF0;
+    *NtablaMnem = 32;
 }
 
 void cargaTablaRegistros(char tablaReg[][MAXV]) {
