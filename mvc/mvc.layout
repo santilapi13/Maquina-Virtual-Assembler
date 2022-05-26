@@ -7,18 +7,14 @@
 			<Cursor1 position="1121" topLine="44" />
 		</Cursor>
 	</File>
-	<File name="main.c" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
+	<File name="main.c" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="7600" topLine="165" />
+			<Cursor1 position="8376" topLine="107" />
 		</Cursor>
 		<Folding>
 			<Collapse line="110" />
+			<Collapse line="125" />
 			<Collapse line="198" />
-			<Collapse line="217" />
-			<Collapse line="224" />
-			<Collapse line="228" />
-			<Collapse line="283" />
-			<Collapse line="303" />
 			<Collapse line="355" />
 			<Collapse line="366" />
 			<Collapse line="375" />

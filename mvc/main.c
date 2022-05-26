@@ -219,7 +219,7 @@ int noCodeLine(char line[]) {
     int i=0;
     while (i<strlen(line) && (line[i]==' ' || line[i]=='\t'))
         i++;
-    return !(strcmp(line,"\n") && i<strlen(line) && line[i] != ';');
+    return !strcmp(line,"\n") || i>=strlen(line) || line[i]==';' || line[i] == '\n';
 }
 
 int isInmed(char cad[]) {

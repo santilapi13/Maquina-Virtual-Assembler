@@ -32,7 +32,7 @@ otro:       add     [0], 1
             jnn     noneg
             jmp     otro2
             add     [3], 2
-
+	          
 nopos:      add     [3], 1
             jmp     otro2
 noneg:      add     [3], 3
