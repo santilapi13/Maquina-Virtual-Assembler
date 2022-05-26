@@ -9,31 +9,29 @@
 	</File>
 	<File name="main.c" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="11415" topLine="29" />
+			<Cursor1 position="9797" topLine="134" />
 		</Cursor>
 		<Folding>
-			<Collapse line="103" />
-			<Collapse line="118" />
-			<Collapse line="191" />
-			<Collapse line="210" />
-			<Collapse line="217" />
-			<Collapse line="221" />
-			<Collapse line="264" />
-			<Collapse line="277" />
-			<Collapse line="284" />
-			<Collapse line="298" />
-			<Collapse line="309" />
-			<Collapse line="318" />
-			<Collapse line="327" />
-			<Collapse line="340" />
-			<Collapse line="357" />
-			<Collapse line="445" />
-			<Collapse line="457" />
-			<Collapse line="474" />
-			<Collapse line="485" />
-			<Collapse line="494" />
-			<Collapse line="525" />
-			<Collapse line="532" />
+			<Collapse line="113" />
+			<Collapse line="128" />
+			<Collapse line="201" />
+			<Collapse line="220" />
+			<Collapse line="227" />
+			<Collapse line="286" />
+			<Collapse line="306" />
+			<Collapse line="358" />
+			<Collapse line="369" />
+			<Collapse line="378" />
+			<Collapse line="387" />
+			<Collapse line="400" />
+			<Collapse line="417" />
+			<Collapse line="505" />
+			<Collapse line="517" />
+			<Collapse line="534" />
+			<Collapse line="545" />
+			<Collapse line="554" />
+			<Collapse line="585" />
+			<Collapse line="592" />
 		</Folding>
 	</File>
 </CodeBlocks_layout_file>

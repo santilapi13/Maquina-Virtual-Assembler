@@ -1,6 +1,10 @@
             ;Jump Forest Jump
-            mov     [1], 69 
-            mov     [2], 110
+\\DATA 10
+\\EXTRA 3000
+\\STACK 5000
+PRUEB EQU 110
+            mov     [1], 69
+            mov     [2], prueb
             mov     [3], 113 
             mov     [4], 100 
             mov     [5], 115 

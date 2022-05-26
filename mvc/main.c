@@ -28,7 +28,8 @@ void cargaTablaRegistros(char tablaReg[][MAXV]);
 int noCodeLine(char line[]);
 int isInmed(char cad[]);
 void procesa(char **parsed,TReg tablaMnem[],int NtablaMnem,TSym simbolos[],int *Nsym,int *nInst,TErr errores[],int *Nerr);
-void wrHeader(FILE *archBin,int nInst,TErr errores[]);
+void wrHeader(FILE *archBin,int nInst,TErr errores[],int segmSize[]);
+void decSegment(char seg[],char size[],int segmSize[]);
 int errorInst(TErr errores[],int Nerr,int nInst,int tipoErr);
 int isARegGral(char cad[]);
 int isAReg(char cad[],char tablaReg[][MAXV]);
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
     leeParametros(argc,argv,asmFilename,&outputOn,binFilename); // Parametros pasados por consola
     cargaTablaMnemonicos(tablaMnem,&NtablaMnem);   // Crea tabla con codigos de operacion y mnemonico
     cargaTablaRegistros(tablaReg);
-    segmSize[0] = segmSize[1] = segmSize[2] = 1024;
+    segmSize[0] = segmSize[1] = segmSize[2] = 1024; // 0: data ; 1: extra ; 2: stack ; 3: code
 
     if ((arch=fopen(asmFilename,"r")) != NULL) {    // PRIMERA PASADA
         nInst = 0;
@@ -65,26 +66,35 @@ int main(int argc, char *argv[]) {
         while (fgets(line,256,arch) != NULL) {
             if (!noCodeLine(line)) {
                 parsed = parseline(line);
-                procesa(parsed,tablaMnem,NtablaMnem,simbolos,&Nsym,&nInst,errores,&Nerr);    // Guarda simbolos y busca errores
+                if (parsed[5] != NULL && parsed[6] != NULL)    // verifica que no sea una directiva
+                    decSegment(parsed[5],parsed[6],segmSize);
+                else
+                    procesa(parsed,tablaMnem,NtablaMnem,simbolos,&Nsym,&nInst,errores,&Nerr);    // Guarda simbolos y busca errores
             }
         }
         freeline(parsed);
         fclose(arch);
     }
 
+    for (int i=0;i<Nsym;i++)
+        printf("SIMBOLO %d: %s %d\n",i,simbolos[i].sym,simbolos[i].value);
+
     if ((arch=fopen(asmFilename,"r")) != NULL) {    // SEGUNDA PASADA
         archBin = fopen(binFilename,"wb");
-        wrHeader(archBin,nInst,errores);   // Escribe el header en .mv1
+        wrHeader(archBin,nInst,errores,segmSize);   // Escribe el header en .mv1
         nInst = 0;
         while (fgets(line,256,arch) != NULL) {
             if (!noCodeLine(line)) {
                 parsed = parseline(line);
-                if (!errorInst(errores,Nerr,nInst,0))    // Si la instruccion actual no tiene un error de mnemonico no debe decodificar
-                    decodifica(parsed,nInst,tablaMnem,simbolos,&cantOp,&codOp,&tipoOpA,&tipoOpB,&opA,&opB,NtablaMnem,Nsym,errores,&Nerr,tablaReg);
-                trABin(cantOp,codOp,tipoOpA,tipoOpB,opA,opB,&instBin,parsed);
-                wrParsedIns(parsed,nInst,errores,Nerr,instBin,outputOn);   // Imprime por pantalla
-                wrBinFile(archBin,&instBin,errores);    // Escribe .mv1
-                nInst++;
+                if (parsed[5]==NULL && parsed[6]==NULL && parsed[7]==NULL && parsed[8]==NULL) {
+                    if (!errorInst(errores,Nerr,nInst,0))    // Si la instruccion actual no tiene un error de mnemonico no debe decodificar
+                        decodifica(parsed,nInst,tablaMnem,simbolos,&cantOp,&codOp,&tipoOpA,&tipoOpB,&opA,&opB,NtablaMnem,Nsym,errores,&Nerr,tablaReg);
+                    trABin(cantOp,codOp,tipoOpA,tipoOpB,opA,opB,&instBin,parsed);
+                    wrParsedIns(parsed,nInst,errores,Nerr,instBin,outputOn);   // Imprime por pantalla
+                    wrBinFile(archBin,&instBin,errores);    // Escribe .mv1
+                    nInst++;
+                } else
+                    printf("%s",line);
             } else
                 printf("%s",line);
         }
@@ -242,9 +252,21 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
     // DECODIFICA EQU Y GUARDA SU VALOR (O DIRECCION DEL CS SI ES STRING)
     if (parsed[7]) {    // si tiene EQU
         codUpper(parsed[7],simbolo);
-        strcpy(simbolos[*Nsym].sym,simbolo);
-        if (isInmed(parsed[8]))
-            simbolos[*Nsym].value = anyToInt(parsed[8],&out);  // VER COMO HACER CON LOS EQU STRINGS
+        i=0;
+        while (i<*Nsym && strcmp(simbolo,simbolos[i].sym))
+            i++;
+        if (i >= *Nsym) {
+            strcpy(simbolos[*Nsym].sym,simbolo);
+            if (isInmed(parsed[8]))
+                simbolos[(*Nsym)++].value = anyToInt(parsed[8],&out);  // VER COMO HACER CON LOS EQU STRINGS
+            else {
+
+            }
+        } else {    // Simbolo duplicado
+            printf("ERROR: Simbolo %s duplicado en linea %d\n",parsed[7],*nInst);
+            errores[*Nerr].tipo = 1;
+            errores[(*Nerr)++].nInst = *nInst;
+        }
     }
 
     // DECODIFICA MNEMONICO EN BUSCA DE ERROR
@@ -262,17 +284,55 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
     }
 }
 
-void wrHeader(FILE *archBin,int nInst,TErr errores[]) {
-    int cero=0;
-    if (errores[0].tipo != -1) {
+void wrHeader(FILE *archBin,int nInst,TErr errores[],int segmSize[]) {
+    int segmAct;
+    if (errores[0].tipo == -1) {
         fwrite("MV-2",4,1,archBin);    // 4 chars fijos
-        preparaParaEscritura(&nInst);
-        fwrite(&nInst,4,1,archBin); // Tamaño del codigo (en cantidad de instrucciones)
-        fwrite(&cero,4,1,archBin);  // 3 lineas reservadas con 0s
-        fwrite(&cero,4,1,archBin);
-        fwrite(&cero,4,1,archBin);
+
+        segmAct = segmSize[0];
+        preparaParaEscritura(&segmAct);
+        fwrite(&segmAct,4,1,archBin); // Tamaño del DS
+        segmAct = segmSize[2];
+        preparaParaEscritura(&segmAct);
+        fwrite(&segmAct,4,1,archBin);  // Tamaño del SS
+        segmAct = segmSize[1];
+        preparaParaEscritura(&segmAct);
+        fwrite(&segmAct,4,1,archBin);  // Tamaño del ES
+        //fwrite(&cero,4,1,archBin);  // Tamaño del CS
+
         fwrite("V.22",4,1,archBin);    // 4 chars fijos
     }
+}
+
+void decSegment(char seg[],char size[],int segmSize[]) {
+    char segment[5],aux = *size;
+    int tam,i=1;
+    while(aux != '\0') {    // pasa a int
+        tam = tam*10 + aux-48;
+        aux = *(size+i);
+        i++;
+    }
+    codUpper(seg,segment);
+    if (tam > 0 && tam < 0xFFFF) {
+        if (!strcmp(segment,"DATA"))
+            if (segmSize[0] == 1024)
+                segmSize[0] = tam;
+            else
+                printf("WARNING: Directiva referente a DATA SEGMENT repetida. Se toma valor de la primera aparicion.\n");
+        else if(!strcmp(segment,"EXTRA"))
+            if (segmSize[1] == 1024)
+                segmSize[1] = tam;
+            else
+                printf("WARNING: Directiva referente a EXTRA SEGMENT repetida. Se toma valor de la primera aparicion.\n");
+        else if (!strcmp(segment,"STACK"))
+            if (segmSize[2] == 1024)
+                segmSize[2] = tam;
+            else
+                printf("WARNING: Directiva referente a STACK SEGMENT repetida. Se toma valor de la primera aparicion.\n");
+        else
+            printf("WARNING: Nombre de segmento inexistente. Linea ignorada.\n");
+    } else
+        printf("WARNING: Valor de segmento invalido. Linea ignorada.");
 }
 
 int errorInst(TErr errores[],int Nerr,int nInst,int tipoErr) {
@@ -524,7 +584,7 @@ void wrParsedIns(char **parsed,int nInst,TErr errores[],int Nerr,int instBin,int
 }
 
 void wrBinFile(FILE *archBin,int *instBin,TErr errores[]) {
-    if (errores[0].tipo != -1) {   // si hay al menos une error no escribe
+    if (errores[0].tipo == -1) {   // si hay al menos une error no escribe
         preparaParaEscritura(instBin);// Pasa de littleEndian a bigEndian
         fwrite(instBin,4,1,archBin);      // Escribe arch binario (si hubo error no)
     }

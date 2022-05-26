@@ -16,3 +16,10 @@
 
 1653071170 c:\users\santi\desktop\maquina virtual assembler\mvc\parser.h
 
+1653592476 source:c:\users\santi\desktop\maquina virtual assembler\mvc\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<math.h>
+	"parser.h"
+
