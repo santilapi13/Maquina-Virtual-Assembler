@@ -403,7 +403,8 @@ int decOpInd(char cad[],char tablaReg[][MAXV],TSym simbolos[],int Nsym) {
     while (cad[i] != ']' && cad[i] != '+' && cad[i] != '-')
         i++;
     if (cad[i] == '+' || cad[i] == '-') {
-        while (cad[i] != ' ')
+        i++;
+        while (cad[i] == ' ')
             i++;
         offset = decOpInm(cad+i,simbolos,Nsym);
     }
@@ -507,7 +508,7 @@ void decodifica(char **parsed,int nInst, TReg tablaMnem[],TSym simbolos[],int *c
         if (*tipoOpB == 1)             // tipo REGISTRO
             *opB = decReg(parsed[3],tablaReg);
         else if (*tipoOpB == 3)        // tipo INDIRECTO
-            *opB = decOpInd(parsed[3],tablaReg,simbolos,Nsym);
+            *opB = decOpInd(parsed[3]+1,tablaReg,simbolos,Nsym);
         else if (*tipoOpB == 2)       // tipo DIRECTO
             if (parsed[3][1] == 39)
                 *opB = parsed[3][2];
