@@ -8,8 +8,8 @@
 #define CANT_REG 16
 
 typedef struct {
-    char mnem[15];  // o rotulo
-    int codOp;  // o numero de instruccion
+    char mnem[15];
+    int codOp;
 } TReg;
 
 typedef struct {
@@ -22,12 +22,18 @@ typedef struct {
     int nInst;
 } TErr;
 
+typedef struct {
+    char sym[10];
+    char str[MAXV];
+} TStr;
+
 void leeParametros(int argc,char *argv[],char asmFilename[],int *outputOn,char binFilename[]);
 void cargaTablaMnemonicos(TReg tablaMnem[],int *NtablaMnem);
 void cargaTablaRegistros(char tablaReg[][MAXV]);
 int noCodeLine(char line[]);
 int isInmed(char cad[]);
-void procesa(char **parsed,TReg tablaMnem[],int NtablaMnem,TSym simbolos[],int *Nsym,int *nInst,TErr errores[],int *Nerr);
+void procesa(char **parsed,TReg tablaMnem[],int NtablaMnem,TSym simbolos[],int *Nsym,int *nInst,TErr errores[],int *Nerr,TStr tablaStr[],int *Nstr);
+void putStrAddr(TSym simbolos[],int Nsym,TStr tablaStr[],int Nstr,int *nInst);
 void wrHeader(FILE *archBin,int nInst,TErr errores[],int segmSize[]);
 void decSegment(char seg[],char size[],int segmSize[]);
 int errorInst(TErr errores[],int Nerr,int nInst,int tipoErr);
@@ -44,6 +50,7 @@ void wrBinFile(FILE *archBin,int *instBin,TErr errores[]);
 void preparaParaEscritura(int *instBin);
 void codUpper(char *cod,char *codOp);
 int anyToInt(char *s, char **out );
+void wrStrInBin(FILE *archBin,TStr tablaStr[],int Nstr,TErr errores[]);
 
 int main(int argc, char *argv[]) {
     FILE *arch;
@@ -51,9 +58,10 @@ int main(int argc, char *argv[]) {
     char line[256],asmFilename[25],binFilename[25], tablaReg[CANT_REG][MAXV];
     TReg tablaMnem[MAXV];
     TSym simbolos[MAXV];
-    char **parsed;
-    int nInst,instBin, cantOp, codOp, tipoOpA, tipoOpB, opA, opB,NtablaMnem,Nsym=0,Nerr=0,outputOn=1,segmSize[3];
+    TStr tablaStr[MAXV];
     TErr errores[MAXV];
+    char **parsed;
+    int nInst,instBin, cantOp, codOp, tipoOpA, tipoOpB, opA, opB,NtablaMnem,Nsym=0,Nerr=0,Nstr=0,outputOn=1,segmSize[3];
 
     leeParametros(argc,argv,asmFilename,&outputOn,binFilename); // Parametros pasados por consola
     cargaTablaMnemonicos(tablaMnem,&NtablaMnem);   // Crea tabla con codigos de operacion y mnemonico
@@ -69,11 +77,12 @@ int main(int argc, char *argv[]) {
                 if (parsed[5] != NULL && parsed[6] != NULL)    // verifica que no sea una directiva
                     decSegment(parsed[5],parsed[6],segmSize);
                 else
-                    procesa(parsed,tablaMnem,NtablaMnem,simbolos,&Nsym,&nInst,errores,&Nerr);    // Guarda simbolos y busca errores
+                    procesa(parsed,tablaMnem,NtablaMnem,simbolos,&Nsym,&nInst,errores,&Nerr,tablaStr,&Nstr);    // Guarda simbolos y busca errores
             }
         }
         freeline(parsed);
         fclose(arch);
+        putStrAddr(simbolos,Nsym,tablaStr,Nstr,&nInst);   // nInst ahora es, en realidad, el tamaño del CS
     }
 
     if ((arch=fopen(asmFilename,"r")) != NULL) {    // SEGUNDA PASADA
@@ -97,6 +106,7 @@ int main(int argc, char *argv[]) {
         }
         freeline(parsed);
         fclose(arch);
+        wrStrInBin(archBin,tablaStr,Nstr,errores);
         fclose(archBin);
         if (errores[0].tipo != -1) {
             printf("\nLa traduccion no tuvo exito por la presencia de 1 o mas errores.\n");
@@ -226,7 +236,7 @@ int isInmed(char cad[]) {
     return (cad[0]>='0' && cad[0]<= '9') || cad[0]=='-' || cad[0]=='%' || cad[0]=='#' || cad[0]=='@' || cad[0] == 39;
 }
 
-void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym,int *nInst,TErr errores[],int *Nerr) {
+void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym,int *nInst,TErr errores[],int *Nerr,TStr tablaStr[],int *Nstr) {
     char mnem[6],simbolo[10],*out;
     int i;
 
@@ -254,10 +264,13 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
             i++;
         if (i >= *Nsym) {
             strcpy(simbolos[*Nsym].sym,simbolo);
-            if (isInmed(parsed[8]))
-                simbolos[(*Nsym)++].value = anyToInt(parsed[8],&out);  // VER COMO HACER CON LOS EQU STRINGS
-            else {
-
+            if (isInmed(parsed[8]))     // EQU inmediato
+                simbolos[(*Nsym)++].value = anyToInt(parsed[8],&out);
+            else {             // EQU string
+                parsed[8][strlen(parsed[8])-1] = '\0';
+                strcpy(tablaStr[*Nstr].str,parsed[8]+1);
+                strcpy(tablaStr[(*Nstr)++].sym,simbolo);
+                (*Nsym)++;
             }
         } else {    // Simbolo duplicado
             printf("ERROR: Simbolo %s duplicado en linea %d\n",parsed[7],*nInst);
@@ -281,6 +294,17 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
     }
 }
 
+void putStrAddr(TSym simbolos[],int Nsym,TStr tablaStr[],int Nstr,int *nInst) {
+    int j;
+    for (int i=0;i<Nstr;i++) {
+        j=0;
+        while (strcmp(simbolos[j].sym,tablaStr[i].sym))
+            j++;
+        simbolos[j].value = *nInst;
+        *nInst += strlen(tablaStr[i].str)+1;
+    }
+}
+
 void wrHeader(FILE *archBin,int nInst,TErr errores[],int segmSize[]) {
     int segmAct;
     if (errores[0].tipo == -1) {
@@ -295,7 +319,8 @@ void wrHeader(FILE *archBin,int nInst,TErr errores[],int segmSize[]) {
         segmAct = segmSize[1];
         preparaParaEscritura(&segmAct);
         fwrite(&segmAct,4,1,archBin);  // Tamaño del ES
-        //fwrite(&cero,4,1,archBin);  // Tamaño del CS
+        preparaParaEscritura(&nInst);
+        fwrite(&nInst,4,1,archBin);  // Tamaño del CS
 
         fwrite("V.22",4,1,archBin);    // 4 chars fijos
     }
@@ -594,4 +619,20 @@ void preparaParaEscritura(int *instBin) {
     b2 = ((*instBin) & 0x00FF0000) >>8;
     b3 = ((*instBin) & 0xFF000000) >>24;
     *instBin = b0 | b1 | b2 | b3;
+}
+
+void wrStrInBin(FILE *archBin,TStr tablaStr[],int Nstr,TErr errores[]) {
+    if (errores[0].tipo == -1) {
+        int carAct;
+        int j;
+        for (int i=0;i<Nstr;i++) {
+            j=0;
+            while(j<=strlen(tablaStr[i].str)) {
+                carAct = tablaStr[i].str[j];
+                preparaParaEscritura(&carAct);
+                fwrite(&carAct,4,1,archBin);
+                j++;
+            }
+        }
+    }
 }
