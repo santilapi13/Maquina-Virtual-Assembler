@@ -4,7 +4,7 @@
 	<ActiveTarget name="Debug" />
 	<File name="main.c" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="2" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="23483" topLine="159" />
+			<Cursor1 position="14998" topLine="137" />
 		</Cursor>
 		<Folding>
 			<Collapse line="120" />
@@ -20,17 +20,13 @@
 			<Collapse line="366" />
 			<Collapse line="380" />
 			<Collapse line="391" />
-			<Collapse line="400" />
-			<Collapse line="409" />
-			<Collapse line="422" />
-			<Collapse line="439" />
-			<Collapse line="527" />
-			<Collapse line="539" />
-			<Collapse line="556" />
-			<Collapse line="567" />
-			<Collapse line="576" />
-			<Collapse line="607" />
-			<Collapse line="614" />
+			<Collapse line="530" />
+			<Collapse line="542" />
+			<Collapse line="559" />
+			<Collapse line="570" />
+			<Collapse line="579" />
+			<Collapse line="610" />
+			<Collapse line="617" />
 		</Folding>
 	</File>
 	<File name="parser.c" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">

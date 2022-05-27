@@ -400,10 +400,13 @@ int decCodOp(char cad[],TReg tablaMnem[],int NtablaMnem) {
 
 int decOpInd(char cad[],char tablaReg[][MAXV],TSym simbolos[],int Nsym) {
     int offset=0,i=0;
-    while (cad[i] != ']' && (cad[i] != '+' || cad[i] != '-'))
+    while (cad[i] != ']' && cad[i] != '+' && cad[i] != '-')
         i++;
-    if (cad[i] == '+' || cad[i] == '-')
-        offset = decOpInm(cad+i+1,simbolos,Nsym);
+    if (cad[i] == '+' || cad[i] == '-') {
+        while (cad[i] != ' ')
+            i++;
+        offset = decOpInm(cad+i,simbolos,Nsym);
+    }
     return ((offset << 4) & 0xFF0) | (decReg(cad,tablaReg) & 0xF);
 }
 
