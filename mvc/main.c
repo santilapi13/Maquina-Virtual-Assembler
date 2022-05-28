@@ -340,21 +340,21 @@ void decSegment(char seg[],char size[],int segmSize[]) {
             if (segmSize[0] == 1024)
                 segmSize[0] = tam;
             else
-                printf("WARNING: Directiva referente a DATA SEGMENT repetida. Se toma valor de la primera aparicion.\n");
+                printf("WARNING: Directiva referente a DATA SEGMENT repetida. Se toma valor de la primera aparicion: %d.\n",segmSize[0]);
         else if(!strcmp(segment,"EXTRA"))
             if (segmSize[1] == 1024)
                 segmSize[1] = tam;
             else
-                printf("WARNING: Directiva referente a EXTRA SEGMENT repetida. Se toma valor de la primera aparicion.\n");
+                printf("WARNING: Directiva referente a EXTRA SEGMENT repetida. Se toma valor de la primera aparicion: %d.\n",segmSize[1]);
         else if (!strcmp(segment,"STACK"))
             if (segmSize[2] == 1024)
                 segmSize[2] = tam;
             else
-                printf("WARNING: Directiva referente a STACK SEGMENT repetida. Se toma valor de la primera aparicion.\n");
+                printf("WARNING: Directiva referente a STACK SEGMENT repetida. Se toma valor de la primera aparicion: %d.\n",segmSize[2]);
         else
             printf("WARNING: Nombre de segmento inexistente. Linea ignorada.\n");
     } else
-        printf("WARNING: Valor de segmento invalido. Linea ignorada.");
+        printf("WARNING: Valor de segmento invalido. Linea ignorada.\n");
 }
 
 int errorInst(TErr errores[],int Nerr,int nInst,int tipoErr) {
