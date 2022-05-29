@@ -237,7 +237,7 @@ int isInmed(char cad[]) {
 }
 
 void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym,int *nInst,TErr errores[],int *Nerr,TStr tablaStr[],int *Nstr) {
-    char mnem[6],simbolo[10],*out;
+    char mnem[6],simbolo[25],*out;
     int i;
 
     // DECODIFICA LABEL Y GUARDA SU CORRESPONDIENTE NRO DE INSTRUCCION
@@ -247,8 +247,14 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
         while (i<*Nsym && strcmp(simbolo,simbolos[i].sym))
             i++;
         if (i >= *Nsym) {
-            strcpy(simbolos[*Nsym].sym,simbolo);
-            simbolos[(*Nsym)++].value = *nInst;
+            if (strlen(simbolo)<=10 && strlen(simbolo)>=3 && !(simbolo[0]>='0' && simbolo[0]<='9')) {
+                strcpy(simbolos[*Nsym].sym,simbolo);
+                simbolos[(*Nsym)++].value = *nInst;
+            } else {
+                printf("ERROR: Simbolo %s tiene una sintaxis incorrecta en linea %d(debe tener entre 3 y 10 caracteres y no puede empezar por numero))\n",simbolo,*nInst);
+                errores[*Nerr].tipo = 1;
+                errores[(*Nerr)++].nInst = *nInst;
+            }
         } else {    // Simbolo duplicado
             printf("ERROR: Simbolo %s duplicado en linea %d\n",parsed[0],*nInst);
             errores[*Nerr].tipo = 1;
@@ -263,14 +269,20 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
         while (i<*Nsym && strcmp(simbolo,simbolos[i].sym))
             i++;
         if (i >= *Nsym) {
-            strcpy(simbolos[*Nsym].sym,simbolo);
-            if (isInmed(parsed[8]))     // EQU inmediato
-                simbolos[(*Nsym)++].value = anyToInt(parsed[8],&out);
-            else {             // EQU string
-                parsed[8][strlen(parsed[8])-1] = '\0';
-                strcpy(tablaStr[*Nstr].str,parsed[8]+1);
-                strcpy(tablaStr[(*Nstr)++].sym,simbolo);
-                (*Nsym)++;
+            if (strlen(simbolo)<=10 && strlen(simbolo)>=3 && !(simbolo[0]>='0' && simbolo[0]<='9')) {
+                strcpy(simbolos[*Nsym].sym,simbolo);
+                if (isInmed(parsed[8]))     // EQU inmediato
+                    simbolos[(*Nsym)++].value = anyToInt(parsed[8],&out);
+                else {             // EQU string
+                    parsed[8][strlen(parsed[8])-1] = '\0';
+                    strcpy(tablaStr[*Nstr].str,parsed[8]+1);
+                    strcpy(tablaStr[(*Nstr)++].sym,simbolo);
+                    (*Nsym)++;
+                }
+            } else {
+                printf("ERROR: Simbolo %s tiene una sintaxis incorrecta en linea %d(debe tener entre 3 y 10 caracteres y no puede empezar por numero))\n",simbolo,*nInst);
+                errores[*Nerr].tipo = 1;
+                errores[(*Nerr)++].nInst = *nInst;
             }
         } else {    // Simbolo duplicado
             printf("ERROR: Simbolo %s duplicado en linea %d\n",parsed[7],*nInst);
@@ -571,7 +583,7 @@ int anyToInt(char *s, char **out ) {
 
 void codUpper(char *cod,char codOp[]) { // Pasa string a mayuscula
     unsigned int i=0;
-    while ((cod[i]>= 'a' && cod[i]<='z') || (cod[i]>= 'A' && cod[i]<='Z') || (cod[i]>= '0' && cod[i]<'9')) {
+    while (cod[i] != '\0') {
         codOp[i] = (cod[i]>='a' && cod[i]<='z') ? (cod[i]-32) : (cod[i]);
         i++;
     }
