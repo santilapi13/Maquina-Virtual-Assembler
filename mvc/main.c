@@ -247,11 +247,11 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
         while (i<*Nsym && strcmp(simbolo,simbolos[i].sym))
             i++;
         if (i >= *Nsym) {
-            if (strlen(simbolo)<=10 && strlen(simbolo)>3 && !(simbolo[0]>='0' && simbolo[0]<='9')) {
+            if (strlen(simbolo)<=10 && strlen(simbolo)>=3 && !(simbolo[0]>='0' && simbolo[0]<='9')) {
                 strcpy(simbolos[*Nsym].sym,simbolo);
                 simbolos[(*Nsym)++].value = *nInst;
             } else {
-                printf("ERROR: Simbolo %s tiene una sintaxis incorrecta (debe tener entre 4 y 10 caracteres y no puede empezar por numero))\n",simbolo);
+                printf("ERROR: Simbolo %s tiene una sintaxis incorrecta en linea %d(debe tener entre 3 y 10 caracteres y no puede empezar por numero))\n",simbolo,*nInst);
                 errores[*Nerr].tipo = 1;
                 errores[(*Nerr)++].nInst = *nInst;
             }
@@ -269,7 +269,7 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
         while (i<*Nsym && strcmp(simbolo,simbolos[i].sym))
             i++;
         if (i >= *Nsym) {
-            if (strlen(simbolo)<=10 && strlen(simbolo)>3 && !(simbolo[0]>='0' && simbolo[0]<='9')) {
+            if (strlen(simbolo)<=10 && strlen(simbolo)>=3 && !(simbolo[0]>='0' && simbolo[0]<='9')) {
                 strcpy(simbolos[*Nsym].sym,simbolo);
                 if (isInmed(parsed[8]))     // EQU inmediato
                     simbolos[(*Nsym)++].value = anyToInt(parsed[8],&out);
@@ -280,7 +280,7 @@ void procesa(char **parsed,TReg tablaMnem[],int Ntabla,TSym simbolos[],int *Nsym
                     (*Nsym)++;
                 }
             } else {
-                printf("ERROR: Simbolo %s tiene una sintaxis incorrecta (debe tener entre 4 y 10 caracteres y no puede empezar por numero))\n",simbolo);
+                printf("ERROR: Simbolo %s tiene una sintaxis incorrecta en linea %d(debe tener entre 3 y 10 caracteres y no puede empezar por numero))\n",simbolo,*nInst);
                 errores[*Nerr].tipo = 1;
                 errores[(*Nerr)++].nInst = *nInst;
             }
