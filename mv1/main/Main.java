@@ -42,20 +42,23 @@ public class Main {
 
 			if ((header[0] == 0x4d562d32) && (header[5]==0x562e3232)) {
 			if ((header[1]+header[2]+header[3])<=(8192-header[4])) {
-				maquinavirtual.setDS((header[1] <<16) & 0xffff0000);
-				a = header[1];
-				maquinavirtual.setSS(((header[2] <<16) & 0xffff0000)+ (a & 0xffff));
+				maquinavirtual.setCS((header[4] <<16) & 0xffff0000);                 // CS 1° 
+				a = header[4];
+				maquinavirtual.setDS(((header[1] <<16) & 0xffff0000)+(a & 0xffff));  // DS 2°
+				a = a + header[1];
+				maquinavirtual.setES(((header[3] <<16) & 0xffff0000)+ (a & 0xffff)); // ES 3°
+				a = a + header[2];
+				maquinavirtual.setSS(((header[2] <<16) & 0xffff0000)+ (a & 0xffff)); // SS 4°
 				maquinavirtual.setSP((0x00010000)+ header[2]); 
-				a = a+header[2];
-				maquinavirtual.setES(((header[3] <<16) & 0xffff0000)+ (a & 0xffff));
-				a = a+header[3]; 
-				maquinavirtual.setCS(((header[4] <<16) & 0xffff0000)+ (a & 0xffff));
 				maquinavirtual.setHP(0x00020000);
 				maquinavirtual.setInicialIP(0x00030000);
 				maquinavirtual.setInicialBP(0x00010000);
+				
+				//System.out.format("DS %08x \n",Registros.getInstancia().getDSLow());
+				
 				for (i = 0; i <header[4]; i++) {					// carga instrucciones en la RAM
 					inst = entrada.readInt();
-					maquinavirtual.cargainstruccion(inst, i+(Registros.getInstancia().getCSLow()));
+					maquinavirtual.cargainstruccion(inst, i);
 				}
 				arch.close();
 				entrada.close();
@@ -64,12 +67,32 @@ public class Main {
 					try {
 						new ProcessBuilder("cmd","/c","cls").inheritIO().start().waitFor();
 					}catch (Exception e) {		
-					}			
+					}
+				/*
+				Memoria.getInstancia().modificaRAM(10, 8);
+				Memoria.getInstancia().modificaRAM(11, -1);
+				Memoria.getInstancia().modificaRAM(12, -1);
+				Memoria.getInstancia().modificaRAM(13, 4);
+				Memoria.getInstancia().modificaRAM(14, -1);
+				Memoria.getInstancia().modificaRAM(15, -1);
+				Memoria.getInstancia().modificaRAM(16, 7);
+				Memoria.getInstancia().modificaRAM(17, 19);
+				Memoria.getInstancia().modificaRAM(18, 22);
 				
+				Memoria.getInstancia().modificaRAM(19, 2);
+				Memoria.getInstancia().modificaRAM(20, -1);
+				Memoria.getInstancia().modificaRAM(21, -1);
+				Memoria.getInstancia().modificaRAM(22, 5);
+				Memoria.getInstancia().modificaRAM(23, -1);
+				Memoria.getInstancia().modificaRAM(24, -1);
+				*/
+				int t=0;
 				do {										// lee y ejecuta codigo desde la RAM
+					
 					inst = maquinavirtual.getInstruccion();
 					maquinavirtual.incrementaIP();
 					maquinavirtual.ejecutaInstruccion(inst);
+					System.out.format("%d \n",t++);
 					if (maquinavirtual.isP() && !maquinavirtual.isBreakpoint(inst))
 						maquinavirtual.sys();
 				} while ((0 <= (maquinavirtual.getIPLow())) && ((maquinavirtual.getIPLow()) < (maquinavirtual.getCSHigh())));

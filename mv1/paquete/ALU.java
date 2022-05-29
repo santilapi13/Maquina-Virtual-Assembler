@@ -265,7 +265,7 @@ public class ALU {
 			}
 			else{
 				resultado =Memoria.getInstancia().getValorRAM(vopA + Registros.getInstancia().getDSLow()) & b;
-				Memoria.getInstancia().modificaRAM(vopA + Registros.getInstancia().getDS(), resultado & mask0);
+				Memoria.getInstancia().modificaRAM(vopA + Registros.getInstancia().getDSLow(), resultado & mask0);
 			}
 		this.seteaCC(resultado);
 	}
@@ -393,12 +393,12 @@ Scanner leer = new Scanner(System.in);
 	else {
 		for (a = comienzo;a<(comienzo+cantidad);a++) {		
 			if (prompt)
-				System.out.format("[%04d]",comienzo);
+				System.out.format("[%04d]",a);
 				auxInt = leer.nextInt();
-				Memoria.getInstancia().modificaRAM(comienzo+Registros.getInstancia().getDSLow(), auxInt);		
+				Memoria.getInstancia().modificaRAM(a+Registros.getInstancia().getDSLow(), auxInt);	
+				
 		}
 	}
-	leer.close();
 }
 	
 public void escritura(){
@@ -697,7 +697,7 @@ public void clearScreen () {
 			}
 			else {
 				if (topA == 2 )    //directo
-					valor = Memoria.getInstancia().getValorRAM(vopA);         //SOLO VOPA ?????
+					valor = Memoria.getInstancia().getValorRAM(vopA + Registros.getInstancia().getDSLow());         //SOLO VOPA ?????
 				else
 					if (topA == 3) 					//Indirecto
 						valor = Memoria.getInstancia().getValorRAM(validarSegmento(vopA));
@@ -720,7 +720,7 @@ public void clearScreen () {
 			}
 			else {
 				if (topA == 2 )    //directo 
-					valor =Memoria.getInstancia().getValorRAM(vopA + Registros.getInstancia().getDS());
+					valor =Memoria.getInstancia().getValorRAM(vopA + Registros.getInstancia().getDSLow());
 				else
 					if (topA == 3) 					//Indirecto
 						valor = Memoria.getInstancia().getValorRAM(validarSegmento(vopA));
@@ -744,7 +744,7 @@ public void clearScreen () {
 				if (topA == 3) 					//Indirecto
 					Memoria.getInstancia().modificaRAM(Memoria.getInstancia().getValorRAM(validarSegmento(vopA)), ~Memoria.getInstancia().getValorRAM(validarSegmento(vopA)));
 				else  
-					Memoria.getInstancia().modificaRAM(vopA + Registros.getInstancia().getDS(),~ Memoria.getInstancia().getValorRAM(vopA + Registros.getInstancia().getDS()));
+					Memoria.getInstancia().modificaRAM(vopA + Registros.getInstancia().getDSLow(),~ Memoria.getInstancia().getValorRAM(vopA + Registros.getInstancia().getDSLow()));
 	}
 	
 	public void stop() {
@@ -754,7 +754,7 @@ public void clearScreen () {
 	public void smov(int topA, int topB, int vopA, int vopB){
 		int b =valor2(topB,vopB);
 		int cont=0;
-		System.out.println(vopA);
+		//System.out.println(vopA);
 		while (b > 0) {
 			if (topA == 2)          // Directo 
 				Memoria.getInstancia().modificaRAM(vopA+ cont + Registros.getInstancia().getDSLow(),b);
@@ -837,7 +837,7 @@ public void push (int topA,int vopA) {
 			}
 			else {
 				if (topA == 2 )    //directo
-					valor = Memoria.getInstancia().getValorRAM(vopA);         
+					valor = Memoria.getInstancia().getValorRAM(vopA + Registros.getInstancia().getDSLow());         
 				else
 					if (topA == 3) 					//Indirecto
 						valor = Memoria.getInstancia().getValorRAM(validarSegmento(vopA));
@@ -845,6 +845,7 @@ public void push (int topA,int vopA) {
 						valor = vopA;
 			}
 		}
+		//System.out.format("pongo en pila %08x \n",valor);
 		Registros.getInstancia().setSP(Registros.getInstancia().getSP()-1);
 		Memoria.getInstancia().modificaRAM(((Registros.getInstancia().getSP()&0XFFFF) + (Registros.getInstancia().getSS()&0xFFFF)), valor);
 	}
@@ -868,12 +869,13 @@ public void push (int topA,int vopA) {
 				}
 				else {
 					if (topA == 2 )    //directo
-						Memoria.getInstancia().modificaRAM(vopA, valor);         
+						Memoria.getInstancia().modificaRAM(vopA+ Registros.getInstancia().getDSLow(), valor);         
 					else
 						if (topA == 3) 					//Indirecto
 							Memoria.getInstancia().modificaRAM(validarSegmento(vopA),valor);
 				}
 			}
+			//System.out.format("saco de pula %08x \n",valor);
 	}
 	
 	public void rnd (int topA,int vopA) {
@@ -888,7 +890,7 @@ public void push (int topA,int vopA) {
 			}
 			else {
 				if (topA == 2 )    //directo
-					valor = Memoria.getInstancia().getValorRAM(vopA);        
+					valor = Memoria.getInstancia().getValorRAM(vopA+ Registros.getInstancia().getDSLow());        
 				else
 					if (topA == 3) 					//Indirecto
 						valor = Memoria.getInstancia().getValorRAM(validarSegmento(vopA));
@@ -920,18 +922,18 @@ public void push (int topA,int vopA) {
 		aux = leer.nextLine();
 		while (q<Registros.getInstancia().getCX()-1 && q<aux.length()) {
 			valor = aux.charAt(q);
-			Memoria.getInstancia().modificaRAM(pos++,(int)valor);
+			Memoria.getInstancia().modificaRAM((pos++)+ Registros.getInstancia().getDSLow(),(int)valor);
 			q++;
 		}
 		valor = '\0';
-		Memoria.getInstancia().modificaRAM(pos, valor);
+		Memoria.getInstancia().modificaRAM(pos+ Registros.getInstancia().getDSLow(), valor);
 		leer.close();
 	}
 
 	public void escrituraString(){
 		int pos=  Registros.getInstancia().getEDX() & 0xffff + inicioSegmento(Registros.getInstancia().getEDX());
 		boolean promt = ((Registros.getInstancia().getEAX()>>11)==0), endline = ((Registros.getInstancia().getEAX()>>8)==0);
-		while (Memoria.getInstancia().getValorRAM(pos) != '\0') {
+		while (Memoria.getInstancia().getValorRAM(pos+ Registros.getInstancia().getDSLow()) != '\0') {
 			if (promt) 
 				System.out.format("[%04d] ",pos);
 			System.out.format("%c\n",Memoria.getInstancia().getValorRAM(pos++));
@@ -1039,10 +1041,19 @@ int valor = 0,maskff = 0x000000ff,aux,aux2,offset = (vopB>>4) & maskff;
 		offset = offset | ~maskff;
 	aux = Registros.getInstancia().getReg(vopB & maskf)+(offset);  //valor de registro + offset
 	aux2 = aux & 0xffff;
+	/*
+	System.out.format("offset %08x \n",offset);
+	System.out.format("vopB %08x \n",vopB);
+	System.out.format("inicio %d \n",inicioSegmento(aux));
+	System.out.format("fin %d \n",finSegmento(aux));
+	System.out.format("aux %08x \n",aux);
+	System.out.format("aux2 %08x \n",aux2);
+	*/
 	if((aux2 + inicioSegmento(aux))>= inicioSegmento(aux) && (aux2 + inicioSegmento(aux))<= finSegmento(aux)) {
 		valor = (aux2 + inicioSegmento(aux)); 
 	}
 	else {
+		
 		System.out.println("SEGMENTATION FAULT");
 		stop();
 	}
