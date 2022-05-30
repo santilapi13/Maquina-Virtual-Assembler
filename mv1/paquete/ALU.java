@@ -39,7 +39,6 @@ public class ALU {
     }
 		
 	public void mov(int topA, int topB, int vopA, int vopB){ //parametros en decimal
-
 		int b = valor2(topB,vopB), copia = vopA, accesoA = copia>>4;
 		int maskAccRegistro = accesoRegistro(accesoA);
 		int nuevovalor,numreg;
@@ -373,7 +372,7 @@ public void lectura(){
 String aux;
 boolean prompt = true, saltoLinea = true;
 int a,comienzo, cantidad,cont,auxInt;
-comienzo = Registros.getInstancia().getEDX();
+comienzo = Registros.getInstancia().getEDX() + Registros.getInstancia().getDSLow();
 cantidad = Registros.getInstancia().getCX();
 Scanner leer = new Scanner(System.in);
 	if (Registros.getInstancia().getAX()>>11 == 1) 
@@ -386,7 +385,7 @@ Scanner leer = new Scanner(System.in);
 		aux = leer.nextLine();
 		cont = 0;
 		for (a = comienzo;a<(comienzo + cantidad);a++) {    //pasar octal o hexa
-			Memoria.getInstancia().modificaRAM(a+Registros.getInstancia().getDSLow(),aux.charAt(cont));
+			Memoria.getInstancia().modificaRAM(a,aux.charAt(cont));
 			cont++;
 		}
 	}	
@@ -395,7 +394,7 @@ Scanner leer = new Scanner(System.in);
 			if (prompt)
 				System.out.format("[%04d]",a);
 				auxInt = leer.nextInt();
-				Memoria.getInstancia().modificaRAM(a+Registros.getInstancia().getDSLow(), auxInt);	
+				Memoria.getInstancia().modificaRAM(a, auxInt);	
 				
 		}
 	}
@@ -404,7 +403,7 @@ Scanner leer = new Scanner(System.in);
 public void escritura(){
 	boolean prompt = true, saltoLinea = true;
 	int a,comienzo, cantidad,salida;
-	comienzo = Registros.getInstancia().getEDX();
+	comienzo = (Registros.getInstancia().getEDX()&0xffff) + Registros.getInstancia().getDSLow();
 	cantidad = Registros.getInstancia().getCX();
 		if ((Registros.getInstancia().getAX() & 0x00000800) == 0x00000800)
 			prompt = false;
@@ -412,7 +411,7 @@ public void escritura(){
 			saltoLinea = false;
 		for (a = comienzo;a<(comienzo+cantidad);a++) {
 			if (prompt)
-				System.out.format("[%04d] ",a);		
+				System.out.format("[%04d]",a);		
 			if (((Registros.getInstancia().getAX() & 0x0000010) ==  0X00000010)){
 				salida = (char)Memoria.getInstancia().getValorRAM(a +Registros.getInstancia().getDSLow())& 0X000000FF;
 				if (((salida>=0) && (salida<=31)) || (salida ==127)) 
@@ -421,9 +420,11 @@ public void escritura(){
 					salida=(char)Memoria.getInstancia().getValorRAM(a + Registros.getInstancia().getDSLow());
 				System.out.format("'%c ",salida);
 			}
-			salida=Memoria.getInstancia().getValorRAM(a + Registros.getInstancia().getDSLow());
-			if (((Registros.getInstancia().getAX()& 0x0000008) ==  0X00000008))
-				System.out.format("H%X ",salida);
+			salida=Memoria.getInstancia().getValorRAM(a);
+			if (((Registros.getInstancia().getAX()& 0x0000008) ==  0X00000008)) {
+				System.out.print("%");
+				System.out.format("%X ",salida);
+			}
 			if (((Registros.getInstancia().getAX()& 0x0000004) ==  0X00000004))  
 				System.out.format("@%o ",salida);
 			if (((Registros.getInstancia().getAX()& 0x0000001) ==  0X00000001)) 
@@ -440,7 +441,7 @@ public void breakpoints(int vopA) {
 }
 
 public void breakParametroC(){
-	int auxiliar,start,end,ip = Registros.getInstancia().getReg(5);
+	int auxiliar,start,end,ip = Registros.getInstancia().getReg(5) & 0xffff ;
 	if (ip>=5) {
 		start = ip - 5;
 		end = ip + 5;
@@ -455,7 +456,7 @@ public void breakParametroC(){
 			System.out.print(">");
 		else
 			System.out.print(" ");
-		System.out.format ("[%04d]: %08X  %d: ",auxiliar,Memoria.getInstancia().getValorRAM(auxiliar),(auxiliar-start+1));
+		System.out.format ("[%04d]: %08X  %d: ",auxiliar,Memoria.getInstancia().getValorRAM(auxiliar) & 0xffff ,(auxiliar-start+1));
 		muestraInstruccion(Memoria.getInstancia().getValorRAM(auxiliar));
 		System.out.print("     ");
 		muestraOperandos(Memoria.getInstancia().getValorRAM(auxiliar));
@@ -463,16 +464,16 @@ public void breakParametroC(){
 	}
 	System.out.print("\nREGISTROS: \n");
 	Registros.getInstancia().getReg(0);
-	System.out.format("DS  = %d |",Registros.getInstancia().getReg(0));
-	System.out.format("SS  = %d |",Registros.getInstancia().getReg(1));
-	System.out.format("ES  = %d |",Registros.getInstancia().getReg(2));
-	System.out.format("CS  = %d |\n",Registros.getInstancia().getReg(3));
-	System.out.format("HP  = %d |",Registros.getInstancia().getReg(4));
-	System.out.format("IP  = %d |",Registros.getInstancia().getReg(5));
-	System.out.format("SP  = %d |",Registros.getInstancia().getReg(6));
-	System.out.format("BP  = %d |\n",Registros.getInstancia().getReg(7));
-	System.out.format("CC  = %d |",Registros.getInstancia().getReg(8));
-	System.out.format("AC  = %d |",Registros.getInstancia().getReg(9));
+	System.out.format("DS  = %08x |",Registros.getInstancia().getReg(0));
+	System.out.format("SS  = %08x |",Registros.getInstancia().getReg(1));
+	System.out.format("ES  = %08x |",Registros.getInstancia().getReg(2));
+	System.out.format("CS  = %08x |\n",Registros.getInstancia().getReg(3));
+	System.out.format("HP  = %08x |",Registros.getInstancia().getReg(4));
+	System.out.format("IP  = %08x |",Registros.getInstancia().getReg(5));
+	System.out.format("SP  = %08x |",Registros.getInstancia().getReg(6));
+	System.out.format("BP  = %08x|\n",Registros.getInstancia().getReg(7));
+	System.out.format("CC  = %08x |",Registros.getInstancia().getReg(8));
+	System.out.format("AC  = %08x |",Registros.getInstancia().getReg(9));
 	System.out.format("EAX = %d |",Registros.getInstancia().getReg(10));
 	System.out.format("EBX = %d |\n",Registros.getInstancia().getReg(11));
 	System.out.format("ECX = %d |",Registros.getInstancia().getReg(12));
@@ -482,11 +483,10 @@ public void breakParametroC(){
 }
 
 public void breakParametroB(){
-
 int cod;
 String aux;
 Scanner leer = new Scanner(System.in);
-	System.out.format("[%04d] cmd: ",Registros.getInstancia().getReg(5)-1);
+	System.out.format("[%04d] cmd: ",(Registros.getInstancia().getReg(5)-1)& 0xffff);
 	aux = leer.nextLine();
 	cod = codEntradaCmd(aux);
 	if ( cod == 1)
@@ -497,19 +497,18 @@ Scanner leer = new Scanner(System.in);
 		else {
 			if (cod == 3) {
 				int i = Integer.parseInt(aux);
-				System.out.format("[%04d] %08X  %d \n",i,Memoria.getInstancia().getValorRAM(i),Memoria.getInstancia().getValorRAM(i));
+				System.out.format("[%04d] %08X  %d \n",i,Memoria.getInstancia().getValorRAM(i)&0xffff,(Memoria.getInstancia().getValorRAM(i)& 0xffff));
 			}
 			else 
 				if (cod == 4) {  
 					String op1 = primeraDireccion(aux),op2 = segundaDireccion(aux);
 					int i = Integer.parseInt(op1),j = Integer.parseInt(op2);
 					for (int t=i;t<=j;t++) 
-						System.out.format("[%04d] %08X  %d \n",t,Memoria.getInstancia().getValorRAM(t),Memoria.getInstancia().getValorRAM(t));
+						System.out.format("[%04d] %08X  %d \n",t,Memoria.getInstancia().getValorRAM(t)&0xffff,Memoria.getInstancia().getValorRAM(t)&0xffff);
 				}
 				else 
 					if (cod == 5){}
 		}
-	leer.close();
 }
 
 
@@ -689,7 +688,7 @@ public void clearScreen () {
 		int valor;
 		int aRegistroA = (vopA>>4);
 		int maskAccRegistro = accesoRegistro(aRegistroA);
-			if (topA == 1 ) {
+		if (topA == 1 ) {
 				if ( aRegistroA == 2) 
 					valor = ((Registros.getInstancia().getReg(vopA & maskf) & maskAccRegistro)>>8);
 				else
@@ -754,10 +753,11 @@ public void clearScreen () {
 	public void smov(int topA, int topB, int vopA, int vopB){
 		int b =valor2(topB,vopB);
 		int cont=0;
-		//System.out.println(vopA);
-		while (b > 0) {
-			if (topA == 2)          // Directo 
+		while (b > '\0') {
+			if (topA == 2) {          // Directo 
+				
 				Memoria.getInstancia().modificaRAM(vopA+ cont + Registros.getInstancia().getDSLow(),b);
+			}
 			else
 				if (topA == 3) 					//Indirecto
 					Memoria.getInstancia().modificaRAM(validarSegmento(vopA),b);
@@ -784,8 +784,9 @@ public void clearScreen () {
 			Registros.getInstancia().modificaReg(numreg, nuevovalor);
 		}
 		else{
-			if (topA == 2)          // Directo 
+			if (topA == 2) {          // Directo 
 				Memoria.getInstancia().modificaRAM(vopA + Registros.getInstancia().getDSLow(),cont);
+			}
 			else
 				if (topA == 3) 					//Indirecto
 					Memoria.getInstancia().modificaRAM(validarSegmento(vopA),cont);
@@ -795,11 +796,11 @@ public void clearScreen () {
 public void scmp(int topA, int topB, int vopA, int vopB){
 int b=-1,cont=0,res = 0, aux=-1;
 	while ((res==0) && (b!=0) && (aux!=0)){
-		b = valor2(topB,vopB+cont);
+		b = valor2(topB,(vopB+cont));
 		if (topA == 2)         // Directo 
 			aux = Memoria.getInstancia().getValorRAM(vopA+ cont + Registros.getInstancia().getDSLow());
 		else 					//Indirecto
-			aux = Memoria.getInstancia().getValorRAM(validarSegmento(vopA+cont));
+			aux = Memoria.getInstancia().getValorRAM(validarSegmento((cont<<4) +vopA));
 		res = aux - b;
 		cont++;
 		if (res<0) {
@@ -817,7 +818,6 @@ int b=-1,cont=0,res = 0, aux=-1;
 			}
 	} 
 }
-	
 	
 public void push (int topA,int vopA) {
 	int valor=0;
@@ -845,7 +845,6 @@ public void push (int topA,int vopA) {
 						valor = vopA;
 			}
 		}
-		//System.out.format("pongo en pila %08x \n",valor);
 		Registros.getInstancia().setSP(Registros.getInstancia().getSP()-1);
 		Memoria.getInstancia().modificaRAM(((Registros.getInstancia().getSP()&0XFFFF) + (Registros.getInstancia().getSS()&0xFFFF)), valor);
 	}
@@ -875,7 +874,6 @@ public void push (int topA,int vopA) {
 							Memoria.getInstancia().modificaRAM(validarSegmento(vopA),valor);
 				}
 			}
-			//System.out.format("saco de pula %08x \n",valor);
 	}
 	
 	public void rnd (int topA,int vopA) {
@@ -912,7 +910,7 @@ public void push (int topA,int vopA) {
 	}
 	
 	public void lecturaString(){
-		int pos=  Registros.getInstancia().getEDX() & 0xffff + inicioSegmento(Registros.getInstancia().getEDX()), q=0;
+		int pos=  (Registros.getInstancia().getEDX() & 0xfff) + inicioSegmento(Registros.getInstancia().getEDX()), q=0;
 		char valor;
 		boolean promt = ((Registros.getInstancia().getEAX()>>11)==0);
 		String aux;
@@ -920,23 +918,22 @@ public void push (int topA,int vopA) {
 		if (promt) 
 			System.out.format("[%04d] ",pos);
 		aux = leer.nextLine();
-		while (q<Registros.getInstancia().getCX()-1 && q<aux.length()) {
+		while ((q<Registros.getInstancia().getCX()-1) && (q<aux.length())) {
 			valor = aux.charAt(q);
-			Memoria.getInstancia().modificaRAM((pos++)+ Registros.getInstancia().getDSLow(),(int)valor);
+			Memoria.getInstancia().modificaRAM((pos),(int)valor);
 			q++;
+			pos++;
 		}
 		valor = '\0';
 		Memoria.getInstancia().modificaRAM(pos+ Registros.getInstancia().getDSLow(), valor);
-		leer.close();
 	}
 
 	public void escrituraString(){
-		int pos=  Registros.getInstancia().getEDX() & 0xffff + inicioSegmento(Registros.getInstancia().getEDX());
+		int pos=  (Registros.getInstancia().getEDX() & 0xffff) + inicioSegmento(Registros.getInstancia().getEDX());
 		boolean promt = ((Registros.getInstancia().getEAX()>>11)==0), endline = ((Registros.getInstancia().getEAX()>>8)==0);
-		while (Memoria.getInstancia().getValorRAM(pos+ Registros.getInstancia().getDSLow()) != '\0') {
-			if (promt) 
-				System.out.format("[%04d] ",pos);
-			System.out.format("%c\n",Memoria.getInstancia().getValorRAM(pos++));
+		while (Memoria.getInstancia().getValorRAM(pos) != '\0') {
+			if (promt) System.out.format("[%d]",pos);
+			System.out.format("%c\n",Memoria.getInstancia().getValorRAM((pos++)));
 		}
 		if (endline)
 			System.out.println("\n");
@@ -1041,19 +1038,10 @@ int valor = 0,maskff = 0x000000ff,aux,aux2,offset = (vopB>>4) & maskff;
 		offset = offset | ~maskff;
 	aux = Registros.getInstancia().getReg(vopB & maskf)+(offset);  //valor de registro + offset
 	aux2 = aux & 0xffff;
-	/*
-	System.out.format("offset %08x \n",offset);
-	System.out.format("vopB %08x \n",vopB);
-	System.out.format("inicio %d \n",inicioSegmento(aux));
-	System.out.format("fin %d \n",finSegmento(aux));
-	System.out.format("aux %08x \n",aux);
-	System.out.format("aux2 %08x \n",aux2);
-	*/
 	if((aux2 + inicioSegmento(aux))>= inicioSegmento(aux) && (aux2 + inicioSegmento(aux))<= finSegmento(aux)) {
 		valor = (aux2 + inicioSegmento(aux)); 
 	}
 	else {
-		
 		System.out.println("SEGMENTATION FAULT");
 		stop();
 	}

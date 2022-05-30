@@ -6,15 +6,13 @@ import java.io.IOException;
 
 import paquete.ALU;
 import paquete.MaquinaVirtual;
-import paquete.Memoria;
-import paquete.Registros;
 
 public class Main { 
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 
 		int[] header = new int[6];
-		int i,a, inst, CS = 0;
+		int i,a, inst;
 		String binFilename = null;
 		
 		MaquinaVirtual maquinavirtual = new MaquinaVirtual();
@@ -34,11 +32,8 @@ public class Main {
 			FileInputStream arch = new FileInputStream(binFilename);
 			DataInputStream entrada = new DataInputStream(arch);
 			
-			for (i = 0; i < 6; i++) { 					// lee el header
+			for (i = 0; i < 6; i++) 					// lee el header
 				header[i] = entrada.readInt();
-				//System.out.format("%d \n ",header[i]);
-			}
-			
 
 			if ((header[0] == 0x4d562d32) && (header[5]==0x562e3232)) {
 			if ((header[1]+header[2]+header[3])<=(8192-header[4])) {
@@ -54,8 +49,6 @@ public class Main {
 				maquinavirtual.setInicialIP(0x00030000);
 				maquinavirtual.setInicialBP(0x00010000);
 				
-				//System.out.format("DS %08x \n",Registros.getInstancia().getDSLow());
-				
 				for (i = 0; i <header[4]; i++) {					// carga instrucciones en la RAM
 					inst = entrada.readInt();
 					maquinavirtual.cargainstruccion(inst, i);
@@ -69,30 +62,29 @@ public class Main {
 					}catch (Exception e) {		
 					}
 				/*
-				Memoria.getInstancia().modificaRAM(10, 8);
-				Memoria.getInstancia().modificaRAM(11, -1);
-				Memoria.getInstancia().modificaRAM(12, -1);
-				Memoria.getInstancia().modificaRAM(13, 4);
-				Memoria.getInstancia().modificaRAM(14, -1);
-				Memoria.getInstancia().modificaRAM(15, -1);
-				Memoria.getInstancia().modificaRAM(16, 7);
-				Memoria.getInstancia().modificaRAM(17, 19);
-				Memoria.getInstancia().modificaRAM(18, 22);
+				 * Carga Arbol en memoria
+				int q=Registros.getInstancia().getDSLow();
+				Memoria.getInstancia().modificaRAM(10+q, 8);
+				Memoria.getInstancia().modificaRAM(11+q, 16);
+				Memoria.getInstancia().modificaRAM(12+q, 13);
+				Memoria.getInstancia().modificaRAM(13+q, 4);
+				Memoria.getInstancia().modificaRAM(14+q, -1);
+				Memoria.getInstancia().modificaRAM(15+q, -1);
+				Memoria.getInstancia().modificaRAM(16+q, 4);
+				Memoria.getInstancia().modificaRAM(17+q, 19);
+				Memoria.getInstancia().modificaRAM(18+q, 22);
 				
-				Memoria.getInstancia().modificaRAM(19, 2);
-				Memoria.getInstancia().modificaRAM(20, -1);
-				Memoria.getInstancia().modificaRAM(21, -1);
-				Memoria.getInstancia().modificaRAM(22, 5);
-				Memoria.getInstancia().modificaRAM(23, -1);
-				Memoria.getInstancia().modificaRAM(24, -1);
+				Memoria.getInstancia().modificaRAM(19+q, 2);
+				Memoria.getInstancia().modificaRAM(20+q, -1);
+				Memoria.getInstancia().modificaRAM(21+q, -1);
+				Memoria.getInstancia().modificaRAM(22+q, 2);
+				Memoria.getInstancia().modificaRAM(23+q, -1);
+				Memoria.getInstancia().modificaRAM(24+q, -1);
 				*/
-				int t=0;
 				do {										// lee y ejecuta codigo desde la RAM
-					
 					inst = maquinavirtual.getInstruccion();
 					maquinavirtual.incrementaIP();
 					maquinavirtual.ejecutaInstruccion(inst);
-					System.out.format("%d \n",t++);
 					if (maquinavirtual.isP() && !maquinavirtual.isBreakpoint(inst))
 						maquinavirtual.sys();
 				} while ((0 <= (maquinavirtual.getIPLow())) && ((maquinavirtual.getIPLow()) < (maquinavirtual.getCSHigh())));
@@ -105,7 +97,5 @@ public class Main {
 		}
 		else 
 			System.out.println("El archivo .mv2 a leer no se encontro en la lista de parametros");
-	
-}
-
+	}
 }
