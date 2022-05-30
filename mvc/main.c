@@ -583,7 +583,7 @@ int anyToInt(char *s, char **out ) {
 
 void codUpper(char *cod,char codOp[]) { // Pasa string a mayuscula
     unsigned int i=0;
-    while (cod[i] != '\0') {
+    while (cod[i] != '\0' && cod[i] != ' ' && cod[i] != '\t') {
         codOp[i] = (cod[i]>='a' && cod[i]<='z') ? (cod[i]-32) : (cod[i]);
         i++;
     }
