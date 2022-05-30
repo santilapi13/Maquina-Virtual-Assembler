@@ -420,7 +420,7 @@ int decOpInd(char cad[],char tablaReg[][MAXV],TSym simbolos[],int Nsym) {
             i++;
         offset = decOpInm(cad+i,simbolos,Nsym);
     }
-    return ((offset << 4) & 0xFF0) | (decReg(cad+1,tablaReg) & 0xF);
+    return ((offset << 4) & 0xFF0) | (decReg(cad,tablaReg) & 0xF);
 }
 
 int decReg(char cad[],char tablaReg[][MAXV]) {
