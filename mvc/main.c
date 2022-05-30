@@ -424,15 +424,19 @@ int decOpInd(char cad[],char tablaReg[][MAXV],TSym simbolos[],int Nsym) {
 }
 
 int decReg(char cad[],char tablaReg[][MAXV]) {
-    char codReg[10];
+    char codRegMin[10],codRegMay[10];
     int i=0,aux;
-    codUpper(cad,codReg);
-    while (i < 10 && strcmp(codReg,tablaReg[i]))
+    while (cad[i] != '+' && cad[i] != '-')
+        codRegMin[i] = cad[i];
+    codRegMin[i] = '\0';
+    codUpper(codRegMin,codRegMay);
+    i=0;
+    while (i < 10 && strcmp(codRegMay,tablaReg[i]))
         i++;
-    if (i < 10 && !strcmp(codReg,tablaReg[i]))
+    if (i < 10 && !strcmp(codRegMay,tablaReg[i]))
         aux = i;
     else      // Es un General Purpose Register (decodificacion especial)
-        decRegGral(codReg,&aux);
+        decRegGral(codRegMay,&aux);
     return aux;
 }
 
