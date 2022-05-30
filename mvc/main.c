@@ -426,8 +426,10 @@ int decOpInd(char cad[],char tablaReg[][MAXV],TSym simbolos[],int Nsym) {
 int decReg(char cad[],char tablaReg[][MAXV]) {
     char codRegMin[10],codRegMay[10];
     int i=0,aux;
-    while (cad[i] != '+' && cad[i] != '-' && cad[i] != ' ' && cad[i] != '\0')
+    while ((cad[i]>='a' && cad[i]<= 'z') || (cad[i]>='A' && cad[i]<='Z')) {
         codRegMin[i] = cad[i];
+        i++;
+    }
     codRegMin[i] = '\0';
     codUpper(codRegMin,codRegMay);
     i=0;
