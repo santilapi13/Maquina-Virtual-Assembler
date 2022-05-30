@@ -412,33 +412,31 @@ int decCodOp(char cad[],TReg tablaMnem[],int NtablaMnem) {
 
 int decOpInd(char cad[],char tablaReg[][MAXV],TSym simbolos[],int Nsym) {
     int offset=0,i=0;
-    while (cad[i] != ']' && cad[i] != '+' && cad[i] != '-')
+    char codReg[10];
+    while (cad[i] != ']' && cad[i] != '+' && cad[i] != '-') {
+        codReg[i] = cad[i];
         i++;
+    }
+    codReg[i] = '\0';
     if (cad[i] == '+' || cad[i] == '-') {
         i++;
         while (cad[i] == ' ')
             i++;
         offset = decOpInm(cad+i,simbolos,Nsym);
     }
-    return ((offset << 4) & 0xFF0) | (decReg(cad,tablaReg) & 0xF);
+    return ((offset << 4) & 0xFF0) | (decReg(codReg,tablaReg) & 0xF);
 }
 
 int decReg(char cad[],char tablaReg[][MAXV]) {
-    char codRegMin[10],codRegMay[10];
+    char codReg[10];
     int i=0,aux;
-    while ((cad[i]>='a' && cad[i]<= 'z') || (cad[i]>='A' && cad[i]<='Z')) {
-        codRegMin[i] = cad[i];
+    codUpper(cad,codReg);
+    while (i < 10 && strcmp(codReg,tablaReg[i]))
         i++;
-    }
-    codRegMin[i] = '\0';
-    codUpper(codRegMin,codRegMay);
-    i=0;
-    while (i < 10 && strcmp(codRegMay,tablaReg[i]))
-        i++;
-    if (i < 10 && !strcmp(codRegMay,tablaReg[i]))
+    if (i < 10 && !strcmp(codReg,tablaReg[i]))
         aux = i;
     else      // Es un General Purpose Register (decodificacion especial)
-        decRegGral(codRegMay,&aux);
+        decRegGral(codReg,&aux);
     return aux;
 }
 
